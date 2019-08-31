@@ -5,36 +5,43 @@ from telegram_token import TOKEN # This file is not going to be uploaded to publ
 from datetime import datetime
 import requests, re, scraper, logging
 
-followed_crns = list()
-chat_id = 0
-
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
 
 logger = logging.getLogger(__name__)
 
-def follow(bot, update, args):
+def follow(bot, update, args, chat_data):
     
     """
     Adds crns to the followed_crns list.
 
-    """    
-    global followed_crns, chat_id
+    """
+    if "follow" not in chat_data:
+        followed_crns = list()
+        chat_data["follow"] = followed_crns
+        
+    followed_crns = chat_data["follow"]
     chat_id = update.message.chat_id
     
     for arg in args:
         followed_crns.append(str(arg))
         bot.send_message(chat_id = chat_id, text = str(arg) + " listeye başarıyla eklendi.")
-        
+    
     followed_crns = list(set(followed_crns)) # Remove duplicate entries
+    
+    chat_data["follow"] = followed_crns
         
-def unfollow(bot, update, args):
+def unfollow(bot, update, args, chat_data):
     
     """
     Removes crns from the followed_crns list.
     
     """   
-    global followed_crns, chat_id
+    if "follow" not in chat_data:
+        followed_crns = list()
+        chat_data["follow"] = followed_crns
+        
+    followed_crns = chat_data["follow"]
     chat_id = update.message.chat_id    
     
     for arg in args:
@@ -43,26 +50,38 @@ def unfollow(bot, update, args):
             bot.send_message(chat_id = chat_id, text = str(arg) + " artık takip edilmiyor.")
         except ValueError:
             bot.send_message(chat_id = chat_id, text = str(arg) + " takip edilenler arasında değil.")
-            
-def follow_reset(bot, update):
+      
+    chat_data["follow"] = followed_crns
+    
+def follow_reset(bot, update, chat_data):
     
     """
     Resets the followed list.
     """
     
-    global followed_crns, chat_id
+    if "follow" not in chat_data:
+        followed_crns = list()
+        chat_data["follow"] = followed_crns
+        
+    followed_crns = chat_data["follow"]
+    
     chat_id = update.message.chat_id
     
     followed_crns = list()
     bot.send_message(chat_id = chat_id, text = "Takip edilenler sıfırlandı.")
+    chat_data["follow"] = followed_crns
     
-def show_followed(bot, update):
+def show_followed(bot, update, chat_data):
     
     """
     Shows the contents of the followed list.
     """
     
-    global followed_crns, chat_id
+    if "follow" not in chat_data:
+        followed_crns = list()
+        chat_data["follow"] = followed_crns
+        
+    followed_crns = chat_data["follow"]
     chat_id = update.message.chat_id
     
     if len(followed_crns) == 0:
@@ -70,6 +89,8 @@ def show_followed(bot, update):
         
     for crn in followed_crns:
         bot.send_message(chat_id = chat_id, text = crn + "\t")
+    
+    chat_data["follow"] = followed_crns
         
 def show_help(bot, update):
     
@@ -82,12 +103,13 @@ def show_help(bot, update):
 /crntakip: Yeni CRNleri takip et.\n
 /crnbirak: CRNyi takipten çıkar.\n
 /sifirla: Bütün CRNleri takipten çıkar.\n
-/izlemebasla: Uyarı sistemini başlat.\n
+/izlembaslat: Uyarı sistemini başlat.\n
+/izlemdurdur: Uyarı sistemini durdur.\n
 /goster: Takip edilen bütün CRNleri göster.\n
 /yardim: Bu metni gör.\n
     \n    
 Örnek Kullanım: /crntakip 7811 8931 yazarak bu iki CRN'yi takibe alabilirsiniz.\n
-Yer boşaldığında uyarı gelmesi için /izlemebasla komutuyla izlemi başlatmanız gerekir.
+Yer boşaldığında uyarı gelmesi için /izlembaslat komutuyla izlemi başlatmanız gerekir.
     """
     bot.send_message(chat_id, text)
     
@@ -98,14 +120,16 @@ def check_crn(bot, job):
     """
     
     available = list()
-    global followed_crns, chat_id
     
     with open("available_courses.txt") as txt_file:
         available = txt_file.read().lstrip("['").rstrip("']").split("', '")
-        
-    for crn in followed_crns:
-        if (crn in available):
-            bot.send_message(chat_id = job.context, text = crn + " kodlu derste boş yer var!")
+    
+    try:
+        for crn in job.context[1]["follow"]:
+            if (crn in available):
+                bot.send_message(chat_id = job.context[0], text = crn + " kodlu derste boş yer var!")
+    except:
+        print("wut")
     
 def start(bot, update):
     
@@ -118,31 +142,52 @@ def start(bot, update):
     show_help(bot, update)
 
     
-def watch(bot, update, job_queue):
+def watch(bot, update, job_queue, chat_data):
 
     """
-    Start watching if there is any available space in the system.
+    Start watching and notify if there is any available seats in the system.
     """    
     
     chat_id = update.message.chat_id
-    t1 = datetime.now()  
-    t2 = datetime(t1.year, t1.month, t1.day, t1.hour, 15, 20)
-    t3 = datetime(t1.year, t1.month, t1.day, t1.hour, 30, 20)
-    t4 = datetime(t1.year, t1.month, t1.day, t1.hour, 45, 20)
-    t5 = datetime(t1.year, t1.month, t1.day, t1.hour + 1, 00, 20)
-    first_run = min(abs(t2 - t1), abs(t3 - t1), abs(t4 - t1), abs(t5 - t1))
-    job = job_queue.run_repeating(check_crn, 900, (t1 + first_run), context = chat_id)
     
-    bot.send_message(chat_id = chat_id, text = "İzleme başlandı.")
+    if "job1" in chat_data:
+        bot.send_message(chat_id = chat_id, text = "İzlem zaten başlatılmış.")
+    else:
+        t1 = datetime.now()  
+        t2 = datetime(t1.year, t1.month, t1.day, t1.hour, 15, 20)
+        t3 = datetime(t1.year, t1.month, t1.day, t1.hour, 30, 20)
+        t4 = datetime(t1.year, t1.month, t1.day, t1.hour, 45, 20)
+        t5 = datetime(t1.year, t1.month, t1.day, t1.hour + 1, 00, 20)
+        first_run = min(abs(t2 - t1), abs(t3 - t1), abs(t4 - t1), abs(t5 - t1))
+        t6 = datetime(t1.year, t1.month, t1.day, t1.hour, t1.minute + 1, t1.second)
+        one_minute = t6 - t1
+        
+        job1 = job_queue.run_repeating(check_crn, 900, (t1 + first_run), context = [chat_id, chat_data]) # First check
+        job2 = job_queue.run_repeating(check_crn, 900, (t1 + first_run + one_minute), context = [chat_id, chat_data]) # Check again after 1 minute
+        
+        chat_data["job1"] = job1
+        chat_data["job2"] = job2    
+        
+        bot.send_message(chat_id = chat_id, text = "İzleme başlandı.")
     
-#def unwatch(bot, update, job_queue):
-#
-#    """
-#    Start watching if there is any available space in the system.
-#    """    
-#    
-#    chat_id = update.message.chat_id    
-#    bot.send_message(chat_id = chat_id, text = "İzlem bırakıldı.")
+def unwatch(bot, update, job_queue, chat_data):
+
+    """
+    Kill watching processes.
+    """    
+    
+    chat_id = update.message.chat_id
+    
+    if "job1" not in chat_data:
+        bot.send_message(chat_id = chat_id, text = "İzlem zaten aktif değil.")
+    else:
+        job1 = chat_data["job1"]
+        job2 = chat_data["job2"]
+        job1.schedule_removal()
+        job2.schedule_removal()
+        del chat_data["job1"]
+        del chat_data["job2"]
+        bot.send_message(chat_id = chat_id, text = "İzlem bırakıldı.")
     
 def main():
     updater = Updater(token=TOKEN)
@@ -152,17 +197,17 @@ def main():
     job_q = updater.job_queue
     
     handler_list = [CommandHandler("start", start),
-                    CommandHandler("crntakip", follow, pass_args=True),
-                    CommandHandler("crnbirak", unfollow, pass_args=True),
-                    CommandHandler("sifirla", follow_reset),
-                    CommandHandler("goster", show_followed),
-                    CommandHandler("izlemebasla", watch, pass_job_queue=True),
+                    CommandHandler("crntakip", follow, pass_args=True, pass_chat_data=True),
+                    CommandHandler("crnbirak", unfollow, pass_args=True, pass_chat_data=True),
+                    CommandHandler("sifirla", follow_reset, pass_chat_data=True),
+                    CommandHandler("goster", show_followed, pass_chat_data=True),
+                    CommandHandler("izlembaslat", watch, pass_job_queue=True, pass_chat_data=True),
+                    CommandHandler("izlemdurdur", unwatch, pass_job_queue=True, pass_chat_data=True),
                     CommandHandler("yardim", show_help)]
                     
     for handler in handler_list:
         dispatcher.add_handler(handler)
         
-
     updater.start_polling()
     updater.idle()
     
