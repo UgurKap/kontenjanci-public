@@ -16,9 +16,9 @@ notifies the user when the course number s/he follows is added to available_cour
 
 1. Sometimes it takes a long time for scraper to scrape every course so bot checks the file again after a minute to make sure user didn't miss an
 important update. But I am going to use "os.path.getmtime(path)" and wait if the file's (last modified date is > 1 minute). This way, I do not
-have to check the file twice and am sure it is up to date.
+have to check the file twice and am sure it is up to date. <b>Done</b>
 
-2. Browser headers can be added to scraper so it looks more legit.
+2. Browser headers can be added to scraper so it looks more legit. <b>Done</b>
 
 3. Scraper checks the available course codes everytime, I might just use another file to hold course codes and update it
-manually(by running the scraper function which updates the course codes) if necessary.
+manually(by running the scraper function which updates the course codes) if necessary. <b>Done</b>

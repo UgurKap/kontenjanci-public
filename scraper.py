@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import requests, json
 
 base_url = "http://www.sis.itu.edu.tr/tr/ders_programlari/LSprogramlar/prg.php"
+headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
 
 def get_lecture_list():
     
@@ -14,7 +15,7 @@ def get_lecture_list():
     """
     
     # Collect the page
-    page = requests.get(base_url)
+    page = requests.get(base_url, headers = headers)
 
     # Create a BeautifulSoup object an parse the page
     soup = BeautifulSoup(page.text, "html.parser")
@@ -32,6 +33,9 @@ def get_lecture_list():
             # There is an empty character between options
             continue
         
+    with open("lecture_codes.txt", "w") as txt_file:
+        txt_file.write(str(lecture_codes))
+        
     return lecture_codes
     
 def get_capacity_crn(lecture_codes):
@@ -48,7 +52,7 @@ def get_capacity_crn(lecture_codes):
     for lecture in lecture_codes:
         # Get the url for this one
         url = base_url + "?fb=" + lecture
-        page = requests.get(url)
+        page = requests.get(url, headers = headers)
         soup = BeautifulSoup(page.text, "html.parser")
         
         tab_con = soup.find_all("td")
