@@ -22,3 +22,5 @@ have to check the file twice and am sure it is up to date. <b>Done</b>
 
 3. Scraper checks the available course codes everytime, I might just use another file to hold course codes and update it
 manually(by running the scraper function which updates the course codes) if necessary. <b>Done</b>
+
+4. Instead of <i>lame</i> txt files, migrating to a real database.
