@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from bs4 import BeautifulSoup
-import requests, json
+import requests, re
+from datetime import datetime
 
 base_url = "http://www.sis.itu.edu.tr/tr/ders_programlari/LSprogramlar/prg.php"
 headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
@@ -36,7 +37,7 @@ def get_lecture_list():
     with open("lecture_codes.txt", "w") as txt_file:
         txt_file.write(str(lecture_codes))
         
-    return lecture_codes
+    return lecture_codes    
     
 def get_capacity_crn(lecture_codes):
     
@@ -54,6 +55,16 @@ def get_capacity_crn(lecture_codes):
         url = base_url + "?fb=" + lecture
         page = requests.get(url, headers = headers)
         soup = BeautifulSoup(page.text, "html.parser")
+        
+        # We have to check update times for each page as it takes ~20 seconds
+        # for SIS to update every page.
+        
+        update_minute = re.findall(r"[0-9]*:[0-9]*:[0-9]*", str(soup))[0].split(":")[1]
+        while (int(update_minute) != datetime.now().minute):
+            time.sleep(0.2)
+            page = requests.get(url, headers = headers)
+            soup = BeautifulSoup(page.text, "html.parser")
+            update_minute = re.findall(r"[0-9]*:[0-9]*:[0-9]*", str(soup))[0].split(":")[1]
         
         tab_con = soup.find_all("td")
         
