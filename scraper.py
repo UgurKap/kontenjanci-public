@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from bs4 import BeautifulSoup
-import requests, re
+import requests, re, time
 from datetime import datetime
 
 base_url = "http://www.sis.itu.edu.tr/tr/ders_programlari/LSprogramlar/prg.php"
@@ -49,6 +49,16 @@ def get_capacity_crn(lecture_codes):
     """    
     
     crn_list = list()
+
+    url = base_url + "?fb=" + lecture_codes[-1]
+    page = requests.get(url, headers = headers)
+    soup = BeautifulSoup(page.text, "html.parser")
+    update_minute = re.findall(r"[0-9]*:[0-9]*:[0-9]*", str(soup))[0].split(":")[1]
+    while (abs(int(update_minute) - datetime.now().minute) not in [0, 1, 2, 58, 59]):
+        time.sleep(0.2)
+        page = requests.get(url, headers = headers)
+        soup = BeautifulSoup(page.text, "html.parser")
+        update_minute = re.findall(r"[0-9]*:[0-9]*:[0-9]*", str(soup))[0].split(":")[1]
     
     for lecture in lecture_codes:
         # Get the url for this one
@@ -59,12 +69,12 @@ def get_capacity_crn(lecture_codes):
         # We have to check update times for each page as it takes ~20 seconds
         # for SIS to update every page.
         
-        update_minute = re.findall(r"[0-9]*:[0-9]*:[0-9]*", str(soup))[0].split(":")[1]
-        while (int(update_minute) != datetime.now().minute):
-            time.sleep(0.2)
-            page = requests.get(url, headers = headers)
-            soup = BeautifulSoup(page.text, "html.parser")
-            update_minute = re.findall(r"[0-9]*:[0-9]*:[0-9]*", str(soup))[0].split(":")[1]
+#        update_minute = re.findall(r"[0-9]*:[0-9]*:[0-9]*", str(soup))[0].split(":")[1]
+        #while (int(update_minute) != datetime.now().minute):
+         #   time.sleep(0.2)
+          #  page = requests.get(url, headers = headers)
+           # soup = BeautifulSoup(page.text, "html.parser")
+           # update_minute = re.findall(r"[0-9]*:[0-9]*:[0-9]*", str(soup))[0].split(":")[1]
         
         tab_con = soup.find_all("td")
         

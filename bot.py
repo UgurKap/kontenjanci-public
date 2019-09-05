@@ -142,9 +142,9 @@ def check_crn(bot, job):
     
     counter = 0    
     while is_data_old():
-        time.sleep(10)
+        time.sleep(5)
         counter += 1
-        if (counter > 12):
+        if (counter > 30):
             bot.send_message(chat_id = job.context[0], text = "Sistemde bir sıkıntı var.")
             return
         
