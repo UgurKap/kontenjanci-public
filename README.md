@@ -24,4 +24,19 @@ have to check the file twice and am sure it is up to date. <b>Done</b>
 3. Scraper checks the available course codes everytime, I might just use another file to hold course codes and update it
 manually(by running the scraper function which updates the course codes) if necessary. <b>Done</b>
 
-4. Instead of <i>lame</i> txt files, migrating to a real database.
+4. Instead of <i>lame</i> txt files, migrating to a real database. (Sqlite)
+
+5. Check the response for successful response.
+
+6. Using RegEx to find update time. <b>DOne</b>
+
+7. Use multi-threads to read information for different lecture codes.
+
+8. Scraper sometimes fails and kills itself. Needs deeper inspection.
+
+  * Possible Cause: Requesting the same page too fast.
+  * Possible Cause: System bans it.
+  * Possible Solution: Add it to systemd.
+  * Possible Solution: Run it inside a web server.
+        
+
