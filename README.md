@@ -1,4 +1,7 @@
 # kontenjanci-public
+
+[![forthebadge](https://forthebadge.com/images/badges/60-percent-of-the-time-works-every-time.svg)](https://forthebadge.com)
+
 Public version of Telegram bot "İTÜ Kontenjan İzlemcisi". (This repo doesn't include the bot token)
 https://telegram.me/ITUKontenjanBot
 
